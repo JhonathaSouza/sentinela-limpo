@@ -2,97 +2,212 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Sentinela - Proteção Online</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinela - Painel de Moderação</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { background-color: #f4f6f9; }
+        .sidebar { min-height: 100vh; background-color: #343a40; }
+        .sidebar a { color: #c2c7d0; text-decoration: none; padding: 10px 15px; display: block; border-radius: 5px; margin-bottom: 5px; }
+        .sidebar a:hover { background-color: #494e53; color: #fff; }
+        .sidebar .active { background-color: #0d6efd; color: #fff; }
+        .card-stats { border-left: 4px solid; }
+        .border-blue { border-color: #0d6efd !important; }
+        .border-red { border-color: #dc3545 !important; }
+        .border-green { border-color: #198754 !important; }
+    </style>
 </head>
-<body class="bg-light">
-    <div class="container mt-5">
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body text-center bg-dark text-white rounded">
-                        <h2>🛡️ Sistema Sentinela</h2>
-                        <p class="mb-0">Análise de Risco em Chats usando Rede Neural LSTM</p>
-                    </div>
-                </div>
+<body>
 
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <form id="sentinela-form">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Cole o trecho da conversa (em português ou inglês):</label>
-                                <textarea id="texto_chat" class="form-control" rows="4" required placeholder="Ex: Oi! Tudo bem com você?"></textarea>
-                            </div>
-                            <button type="submit" id="btn-analisar" class="btn btn-primary w-100 fw-bold">Analisar com IA</button>
-                        </form>
-                    </div>
-                </div>
-
-                <div id="area-resultado"></div>
-
-            </div>
-        </div>
+<div class="d-flex">
+    <div class="sidebar p-3" style="width: 250px;">
+        <h4 class="text-white text-center mb-4"><i class="fa-solid fa-shield-halved text-primary"></i> Sentinela</h4>
+        <nav>
+            <a href="#" class="active"><i class="fa-solid fa-house me-2"></i> Início (Monitoramento)</a>
+            <a href="#"><i class="fa-solid fa-chart-pie me-2"></i> Relatórios de Risco</a>
+            <a href="#"><i class="fa-solid fa-users me-2"></i> Usuários Suspeitos</a>
+            <a href="#"><i class="fa-solid fa-gear me-2"></i> Configurações da IA</a>
+            <a href="#" class="text-danger mt-5"><i class="fa-solid fa-right-from-bracket me-2"></i> Sair</a>
+        </nav>
     </div>
 
-    <script>
-        document.getElementById('sentinela-form').addEventListener('submit', async function(event) {
-            event.preventDefault(); // Impede a página de recarregar
+    <div class="flex-grow-1 p-4">
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fa-solid fa-desktop text-secondary me-2"></i> Painel de Moderação em Tempo Real</h2>
+            <span class="badge bg-success p-2 fs-6"><i class="fa-solid fa-check-circle me-1"></i> IA LSTM Conectada</span>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card shadow-sm card-stats border-blue">
+                    <div class="card-body">
+                        <h6 class="text-muted">Mensagens Analisadas Hoje</h6>
+                        <h3 id="contador-mensagens">1.248</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm card-stats border-red">
+                    <div class="card-body">
+                        <h6 class="text-muted">Ameaças Interceptadas</h6>
+                        <h3 class="text-danger" id="contador-ameacas">14</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm card-stats border-green">
+                    <div class="card-body">
+                        <h6 class="text-muted">Limiar de Decisão Atual (τ)</h6>
+                        <h3>0.85 <small class="fs-6 text-muted">/ 1.0</small></h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white fw-bold">
+                <i class="fa-solid fa-robot text-primary me-2"></i> Submeter Nova Conversa para Análise
+            </div>
+            <div class="card-body">
+                <form id="form-analise">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Cole o trecho suspeito da conversa abaixo:</label>
+                        <textarea id="texto_chat" class="form-control" rows="4" required placeholder="Ex: Oi! Tudo bem? O que você está fazendo?"></textarea>
+                    </div>
+                    <button type="submit" id="btn-analisar" class="btn btn-primary w-100 fw-bold">
+                        <i class="fa-solid fa-magnifying-glass me-2"></i> Analisar com Rede Neural LSTM
+                    </button>
+                </form>
+
+                <div id="area-resultado" class="mt-4"></div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-white fw-bold">
+                <i class="fa-solid fa-clock-rotate-left text-secondary me-2"></i> Últimos Logs de Análise
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>Trecho Analisado (Truncado)</th>
+                            <th>Probabilidade (P)</th>
+                            <th>Status da Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-logs">
+                        <tr>
+                            <td>18/05/2026 15:20</td>
+                            <td class="text-muted">"qual seu jogo favorito do roblox?"</td>
+                            <td>0.12</td>
+                            <td><span class="badge bg-success">Permitido</span></td>
+                        </tr>
+                        <tr>
+                            <td>18/05/2026 15:15</td>
+                            <td class="text-muted">"vc tem webcam no quarto? liga pra mim..."</td>
+                            <td>0.92</td>
+                            <td><span class="badge bg-danger">Bloqueado (Predador)</span></td>
+                        </tr>
+                        <tr>
+                            <td>18/05/2026 14:50</td>
+                            <td class="text-muted">"eu te ajudo na missao, me add ai"</td>
+                            <td>0.08</td>
+                            <td><span class="badge bg-success">Permitido</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    let qtdMensagens = 1248;
+    let qtdAmeacas = 14;
+
+    document.getElementById('form-analise').addEventListener('submit', async function(event) {
+        event.preventDefault();
+        
+        const textoInput = document.getElementById('texto_chat').value;
+        const areaResultado = document.getElementById('area-resultado');
+        const btnAnalisar = document.getElementById('btn-analisar');
+        const tabelaLogs = document.getElementById('tabela-logs');
+        
+        btnAnalisar.disabled = true;
+        btnAnalisar.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Processando vetores na LSTM...';
+        areaResultado.innerHTML = '';
+        
+        try {
+            const resposta = await fetch('/api/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: textoInput })
+            });
             
-            const textoInput = document.getElementById('texto_chat').value;
-            const areaResultado = document.getElementById('area-resultado');
-            const btnAnalisar = document.getElementById('btn-analisar');
+            if (!resposta.ok) throw new Error("Erro na API");
+            const dados = await resposta.json();
             
-            // Estado de "Carregando"
-            btnAnalisar.disabled = true;
-            btnAnalisar.innerText = "Analisando padrões ocultos...";
+            const porcentagem = (dados.risk_probability * 100).toFixed(1);
+            const isDanger = dados.risk_detected;
+            const corAlerta = isDanger ? "danger" : "success";
+            const iconeTopo = isDanger ? "fa-triangle-exclamation text-danger" : "fa-shield-halved text-success";
+            
+            // 1. Renderiza o Card de Alerta
             areaResultado.innerHTML = `
-                <div class="alert alert-info text-center shadow-sm">
-                    <strong>Processando:</strong> Conectando ao cérebro do Sentinela...
+                <div class="alert alert-${corAlerta} shadow-sm text-center fs-5 fade show">
+                    <i class="fa-solid ${iconeTopo} fa-2x mb-2 d-block"></i>
+                    <h4 class="alert-heading fw-bold">${dados.status}</h4>
+                    <hr>
+                    <p class="mb-1 fs-6"><strong>Você digitou:</strong> "${dados.original_text}"</p>
+                    <p class="mb-3 text-muted" style="font-size: 0.9rem;">
+                        <small><em>(Traduzido no Middleware para: "${dados.translated_text}")</em></small>
+                    </p>
+                    <p class="mb-0 mt-2"><strong>Certeza Matemática (Probabilidade):</strong> ${porcentagem}%</p>
                 </div>
             `;
+
+            // 2. Atualiza a Tabela de Logs em tempo real
+            const dataAtual = new Date();
+            const dataFormatada = `${dataAtual.getDate().toString().padStart(2, '0')}/${(dataAtual.getMonth() + 1).toString().padStart(2, '0')}/${dataAtual.getFullYear()} ${dataAtual.getHours().toString().padStart(2, '0')}:${dataAtual.getMinutes().toString().padStart(2, '0')}`;
             
-            try {
-                // Chama a nossa própria API no Render
-                const resposta = await fetch('/api/analyze', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ text: textoInput })
-                });
-                
-                if (!resposta.ok) throw new Error("Erro na API");
-                
-                const dados = await resposta.json();
-                
-                // Formata os dados igual você fazia no views.py
-                const porcentagem = (dados.risk_probability * 100).toFixed(1);
-                const corAlerta = dados.risk_detected ? "danger" : "success";
-                
-                // Desenha o resultado na tela
-                areaResultado.innerHTML = `
-                    <div class="alert alert-${corAlerta} shadow-sm text-center">
-                        <h4 class="alert-heading">${dados.status}</h4>
-                        <hr>
-                        <p class="mb-1"><strong>Texto Analisado:</strong> "${dados.original_text}"</p>
-                        <p class="mb-1 text-muted"><small><strong>Tradução da IA:</strong> "${dados.translated_text}"</small></p>
-                        <p class="mb-0 mt-2"><strong>Certeza do Modelo:</strong> ${porcentagem}%</p>
-                    </div>
-                `;
-            } catch (erro) {
-                // Desenha o erro caso a API falhe
-                areaResultado.innerHTML = `
-                    <div class="alert alert-warning text-center shadow-sm">
-                        A API de Inteligência Artificial está offline ou ocorreu um erro. Verifique os logs do Render.
-                    </div>
-                `;
-            } finally {
-                // Restaura o botão
-                btnAnalisar.disabled = false;
-                btnAnalisar.innerText = "Analisar com IA";
+            const textoTruncado = dados.original_text.length > 50 ? dados.original_text.substring(0, 50) + "..." : dados.original_text;
+            const badgeTabela = isDanger ? '<span class="badge bg-danger">Bloqueado (Predador)</span>' : '<span class="badge bg-success">Permitido</span>';
+            
+            const novaLinha = document.createElement('tr');
+            novaLinha.innerHTML = `
+                <td>${dataFormatada}</td>
+                <td class="text-muted">"${textoTruncado}"</td>
+                <td>${dados.risk_probability.toFixed(2)}</td>
+                <td>${badgeTabela}</td>
+            `;
+            tabelaLogs.prepend(novaLinha); // Adiciona no topo da tabela
+
+            // 3. Atualiza os Contadores do Painel
+            qtdMensagens++;
+            document.getElementById('contador-mensagens').innerText = qtdMensagens.toLocaleString('pt-BR');
+            if (isDanger) {
+                qtdAmeacas++;
+                document.getElementById('contador-ameacas').innerText = qtdAmeacas;
             }
-        });
-    </script>
+
+        } catch (erro) {
+            areaResultado.innerHTML = `
+                <div class="alert alert-warning text-center fade show">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i> Erro de conexão com o motor de IA.
+                </div>
+            `;
+        } finally {
+            btnAnalisar.disabled = false;
+            btnAnalisar.innerHTML = '<i class="fa-solid fa-magnifying-glass me-2"></i> Analisar com Rede Neural LSTM';
+        }
+    });
+</script>
+
 </body>
 </html>
