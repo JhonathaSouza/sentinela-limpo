@@ -6,35 +6,37 @@ import nltk
 import uvicorn
 import tensorflow as tf
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from deep_translator import GoogleTranslator
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
-# 1. Configuração de Caminhos
-# Em produção no Render, o código reside em /opt/render/project/src
+# Configuração de Caminhos
 BASE_DIR = "/opt/render/project/src"
 MODEL_PATH = os.path.join(BASE_DIR, 'data', 'processed', 'sentinela_lstm.keras')
 TOKENIZER_PATH = os.path.join(BASE_DIR, 'data', 'processed', 'tokenizer.pickle')
 
-# 2. Carregamento Único do Modelo e Tokenizer
+# Carregamento do Modelo
 print("Iniciando carregamento do modelo...")
 if not os.path.exists(MODEL_PATH):
     print(f"ERRO: Arquivo não encontrado em {MODEL_PATH}")
-    # Lista o diretório para debug rápido no log do Render
-    if os.path.exists(BASE_DIR):
-        print("Conteúdo da raiz:", os.listdir(BASE_DIR))
     sys.exit(1)
 
 model = tf.keras.models.load_model(MODEL_PATH)
 with open(TOKENIZER_PATH, 'rb') as handle:
     tokenizer = pickle.load(handle)
 
-# 3. Configuração NLTK
+# Configuração NLTK
 nltk.download('stopwords', quiet=True)
 stop_words = set(nltk.corpus.stopwords.words('english'))
 
-# 4. Inicialização do FastAPI
+# Inicialização do FastAPI
 app = FastAPI(title="Sentinela API")
+
+# Monta a pasta frontend para carregar imagens ou CSS (caso você tenha)
+if os.path.exists(os.path.join(BASE_DIR, "frontend")):
+    app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
 class MessageRequest(BaseModel):
     text: str
@@ -45,6 +47,7 @@ def clean_text(text):
     words = [w for w in text.split() if w not in stop_words]
     return " ".join(words)
 
+# Rota 1: O cérebro da IA
 @app.post("/api/analyze")
 async def analyze_message(request: MessageRequest):
     texto_em_ingles = GoogleTranslator(source='pt', target='en').translate(request.text)
@@ -62,3 +65,13 @@ async def analyze_message(request: MessageRequest):
         "risk_probability": prediction_prob,
         "status": "ALERTA: Possível Predador!" if is_predator else "Interação Segura."
     }
+
+# Rota 2: A Interface Visual (Front-end)
+@app.get("/", response_class=HTMLResponse)
+async def read_root():
+    html_path = os.path.join(BASE_DIR, "frontend", "index.html")
+    try:
+        with open(html_path, "r", encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        return "<h1>Erro: Arquivo index.html não encontrado na pasta frontend.</h1>"

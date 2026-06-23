@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Sentinela - Proteção Online</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body text-center bg-dark text-white rounded">
+                        <h2>🛡️ Sistema Sentinela</h2>
+                        <p class="mb-0">Análise de Risco em Chats usando Rede Neural LSTM</p>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <form id="sentinela-form">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Cole o trecho da conversa (em português ou inglês):</label>
+                                <textarea id="texto_chat" class="form-control" rows="4" required placeholder="Ex: Oi! Tudo bem com você?"></textarea>
+                            </div>
+                            <button type="submit" id="btn-analisar" class="btn btn-primary w-100 fw-bold">Analisar com IA</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="area-resultado"></div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('sentinela-form').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Impede a página de recarregar
+            
+            const textoInput = document.getElementById('texto_chat').value;
+            const areaResultado = document.getElementById('area-resultado');
+            const btnAnalisar = document.getElementById('btn-analisar');
+            
+            // Estado de "Carregando"
+            btnAnalisar.disabled = true;
+            btnAnalisar.innerText = "Analisando padrões ocultos...";
+            areaResultado.innerHTML = `
+                <div class="alert alert-info text-center shadow-sm">
+                    <strong>Processando:</strong> Conectando ao cérebro do Sentinela...
+                </div>
+            `;
+            
+            try {
+                // Chama a nossa própria API no Render
+                const resposta = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text: textoInput })
+                });
+                
+                if (!resposta.ok) throw new Error("Erro na API");
+                
+                const dados = await resposta.json();
+                
+                // Formata os dados igual você fazia no views.py
+                const porcentagem = (dados.risk_probability * 100).toFixed(1);
+                const corAlerta = dados.risk_detected ? "danger" : "success";
+                
+                // Desenha o resultado na tela
+                areaResultado.innerHTML = `
+                    <div class="alert alert-${corAlerta} shadow-sm text-center">
+                        <h4 class="alert-heading">${dados.status}</h4>
+                        <hr>
+                        <p class="mb-1"><strong>Texto Analisado:</strong> "${dados.original_text}"</p>
+                        <p class="mb-1 text-muted"><small><strong>Tradução da IA:</strong> "${dados.translated_text}"</small></p>
+                        <p class="mb-0 mt-2"><strong>Certeza do Modelo:</strong> ${porcentagem}%</p>
+                    </div>
+                `;
+            } catch (erro) {
+                // Desenha o erro caso a API falhe
+                areaResultado.innerHTML = `
+                    <div class="alert alert-warning text-center shadow-sm">
+                        A API de Inteligência Artificial está offline ou ocorreu um erro. Verifique os logs do Render.
+                    </div>
+                `;
+            } finally {
+                // Restaura o botão
+                btnAnalisar.disabled = false;
+                btnAnalisar.innerText = "Analisar com IA";
+            }
+        });
+    </script>
+</body>
+</html>
